@@ -1,0 +1,95 @@
+name: Build Windows installers
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**/*.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: installers-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }} MSIX
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64, ARM64]
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: '10.0.x'
+      - uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
+      - name: Build, sign and verify installable package
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          SIGNING_PFX_BASE64: ${{ secrets.SIGNING_PFX_BASE64 }}
+          SIGNING_PFX_PASSWORD: ${{ secrets.SIGNING_PFX_PASSWORD }}
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
+        run: ./scripts/Build-Installer.ps1 -Platform $env:PLATFORM
+      - name: Upload installer
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Cirrus-installer-${{ matrix.platform }}
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload build diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: build-logs-${{ matrix.platform }}
+          path: logs/
+          retention-days: 7
+
+  release:
+    name: Publish downloadable installers
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: Cirrus-installer-*
+          path: installers
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          COMMIT: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          tag="build-${RUN_NUMBER}"
+          cat > notes.md <<EOF
+          Unofficial Cirrus build from commit ${COMMIT}.
+
+          Windows 11 recommended (minimum Windows 10 build 19041).
+          Download the x64 ZIP for Intel/AMD PCs, or ARM64 ZIP for Windows on ARM.
+          Extract the entire ZIP, then double-click Install.cmd. Accept the Windows certificate permission prompt on first install.
+          .NET and Windows App SDK are included; no Visual Studio or local build is required.
+          Builds without configured Last.fm credentials cannot use Last.fm scrobbling.
+          Unless a stable signing certificate is configured in repository secrets, each build uses a new self-signed certificate and needs to be trusted again.
+
+          Build logs: ${RUN_URL}
+          EOF
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" installers/*.zip --clobber
+          else
+            gh release create "$tag" installers/*.zip --target "$COMMIT" --title "Cirrus 0.2.${RUN_NUMBER} (unofficial)" --notes-file notes.md --latest
+          fi

@@ -32,11 +32,12 @@
         <PublishAot>true</PublishAot>
         <PublishTrimmed>true</PublishTrimmed>
         <SelfContained>true</SelfContained>
+        <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
         <TrimMode>partial</TrimMode>
         <InvariantGlobalization>false</InvariantGlobalization>
         <StripSymbols>false</StripSymbols>
         <SetSymbols>true</SetSymbols>
-        <PublishProfile>win-$(Platform).pubxml</PublishProfile>
+        <PublishProfile Condition="'$(PublishProfile)' == ''">win-$(Platform).pubxml</PublishProfile>
         <AppxPackageDir>../../packages</AppxPackageDir>
     </PropertyGroup>
 
@@ -54,6 +55,7 @@
 		<Content Include="Assets\Fonts\*" />
 		<Content Include="Assets\Images\*" />
 		<EmbeddedResource Include="app.config.json" LogicalName="Cirrus.app.config.json" Condition="Exists('app.config.json')" />
+		<EmbeddedResource Include="app.config.template.json" LogicalName="Cirrus.app.config.json" Condition="!Exists('app.config.json')" />
 	</ItemGroup>
 
     <ItemGroup>

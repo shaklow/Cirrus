@@ -20,6 +20,21 @@ Cirrus（前身为 LyricEase）是一款网易云音乐第三方客户端。Cirr
 
 ## 构建
 
+### 本 fork 的安装包
+
+从 [Releases](https://github.com/shaklow/Cirrus/releases/latest) 下载 `Cirrus-版本-x64.zip`（Intel/AMD 电脑）或 `Cirrus-版本-ARM64.zip`（Windows on ARM）。完整解压后双击 `Install.cmd`，在 Windows 提示时授权导入此版本的签名证书，安装完成后从开始菜单打开 Cirrus。推荐 Windows 11，最低 Windows 10 版本 2004（内部版本 19041）。安装包包含 .NET 与 Windows App SDK，无需安装 Visual Studio 或在本地构建。
+
+本 fork 使用独立的包标识和发布者 `shaklow.Cirrus`，属于非官方版本。默认每次构建自动生成自签名证书，只分发公钥证书，不分发私钥；后续版本可能需要重新信任证书。卸载可在 Windows 设置的“应用”中完成。
+
+[Build Windows installers](https://github.com/shaklow/Cirrus/actions/workflows/build-installers.yml) 在推送代码至 `main` 或手动运行时，使用 GitHub 托管的 Windows / Visual Studio 2026 / .NET 10 环境构建 x64 和 ARM64 的 Release NativeAOT MSIX，验证签名后发布到 Releases。失败日志保留 7 天，安装包构建产物保留 30 天，Releases 中的文件不受该保留期限制。
+
+可选仓库 Actions secrets：
+
+- `SIGNING_PFX_BASE64` 和 `SIGNING_PFX_PASSWORD`：固定的代码签名 PFX（Base64）及其密码。证书 Subject 必须是 `CN=shaklow.Cirrus`；不配置时自动生成临时签名证书。
+- `LASTFM_API_KEY` 和 `LASTFM_API_SECRET`：自己的 Last.fm 应用凭据。不配置仍可构建和使用网易云功能，但无法使用 Last.fm 听歌记录同步。与上游一致，这些凭据会嵌入客户端，不能当作分发后仍保密的服务端凭据。
+
+以下是上游项目的自行构建说明。
+
 目前该项目处于活跃开发阶段。我们尚未提供官方预编译版本，但你可以使用此仓库自行构建项目。请注意，该项目尚处于早期阶段，代码库可能不稳定。
 
 ### 前置要求
