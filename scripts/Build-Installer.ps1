@@ -20,7 +20,10 @@ try {
 
     if ($env:SIGNING_PFX_BASE64) {
         [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:SIGNING_PFX_BASE64))
-        $password = ConvertTo-SecureString -String "$env:SIGNING_PFX_PASSWORD" -AsPlainText -Force
+        $password = [Security.SecureString]::new()
+        if ($env:SIGNING_PFX_PASSWORD) {
+            $password = ConvertTo-SecureString -String $env:SIGNING_PFX_PASSWORD -AsPlainText -Force
+        }
         $cert = Import-PfxCertificate -FilePath $pfxPath -Password $password -CertStoreLocation Cert:\CurrentUser\My
     } else {
         $cert = New-SelfSignedCertificate -Type Custom -Subject 'CN=shaklow.Cirrus' `
