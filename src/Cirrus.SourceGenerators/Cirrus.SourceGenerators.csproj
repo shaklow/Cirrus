@@ -6,6 +6,8 @@
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <Platforms>AnyCPU</Platforms>
+        <!-- Generators execute inside the build host, even for ARM64 applications. -->
+        <PlatformTarget>AnyCPU</PlatformTarget>
     </PropertyGroup>
     
     <PropertyGroup>

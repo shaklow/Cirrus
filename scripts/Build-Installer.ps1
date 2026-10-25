@@ -39,7 +39,7 @@ try {
     $buildArgs = @(
         'src/Cirrus/Cirrus.csproj', '/restore', '/m', '/verbosity:minimal',
         '/p:Configuration=Release', "/p:Platform=$Platform", "/p:RuntimeIdentifier=$rid",
-        "/p:PublishProfile=win-$Platform.pubxml", '/p:GenerateAppxPackageOnBuild=true',
+        "/p:PublishProfile=win-$Platform.pubxml",
         '/p:UapAppxPackageBuildMode=SideloadOnly', '/p:AppxBundle=Never',
         '/p:AppxPackageSigningEnabled=true', "/p:PackageCertificateThumbprint=$($cert.Thumbprint)",
         '/p:AppxAutoIncrementPackageRevision=false', '/p:GenerateAppInstallerFile=false',
